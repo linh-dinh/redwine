@@ -1,0 +1,246 @@
+---
+title: "STAT 2450 Assignment 8, Winter 2020 - due Monday, April 6, by 2 P.M."
+author: "Linh Dinh"
+date: 'Banner:  B00833339'
+output:
+  pdf_document: default
+  html_document: default
+  word_document: default
+---
+
+
+0. Evaluation
+
+Question 1: 4 points
+
+Question 2: 10 points
+
+Quesion 3: 5 points
+
+Question 4: 17 points
+
+Question 5: 6 points
+
+Question 6: 18 points
+
+Total will be normalized to 50 points. 
+
+
+1.  ISLR, chapter 5, problem 1.
+
+
+$$Var(aX+(1-a)Y)=a^2 V(X) + 2a(1-a)Cov(X,Y) + (1-a)^2 V(Y)$$
+$$Var(aX+(1-a)Y)=a^2V(X)+(2a-2a^2)Cov(X,Y)+(1-2a+a^2)V(Y)$$
+$$Var(aX+(1-a)Y)=a^2(V(X)+V(Y)-2Cov(X,Y))+a(2Cov(X,Y)-2V(Y))+b=g(t)$$
+$$g'(t)=2a(V(X)+V(Y)-2Cov(X,Y))+2(Cov(X,Y)-V(Y))=0$$
+$$t_{extremum}=\frac{V(Y)-Cov(X,Y)}{V(X)+V(Y)-2Cov(X,Y)}$$
+If we expand the value for $Var(X-Y)$ the same way, we get $V(X)+V(Y)-2Cov(X,Y)$, which is the same as the coefficient for $a^2$ in the function above. Since a variance cannot be negative, this coefficient is not negative as well. Thus, the parabola is always opening up, and the extremum is the minimizing a value given in (5.6).
+
+2. ISLR, chapter 5, problem 2.
+
+   DO ALL PARTS.  For part (g), base your comments on the following
+   figure.
+
+a. The probability that the first bootstrap observation is not the $j^{th}$ observation from the original sample is $(1-\frac{1}{n})$. This is because the probability that it IS the $j^{th}$ observation is $\frac{1}{n}$.
+
+b. The probability that the second bootstrap observation is not the $j^{th}$ observation from the original sample is $(1-\frac{1}{n})$.
+
+c. The probability that the $j^{th}$ observation is not in the bootstrap sample is the product of the probabilities that it is not the $1^{st}$, $2^{nd}$,...,$n^{th}$. There are n probabilities, and each one is equal to $(1-\frac{1}{n})$, so the overall probability is $(1-\frac{1}{n})^{n}$.
+
+d.
+```{r}
+n=5
+1-(1-1/n)^n
+```
+
+e.
+```{r}
+n=100
+1-(1-1/n)^n
+```
+
+f.
+```{r}
+n=10000
+1-(1-1/n)^n
+```
+
+g.
+```{r}
+   n=c(1:100,100*c(1:10),500*(1:100))
+   Pn=1-(1-1/n)^n
+   plot(n,Pn,xlab="n",ylab="P_n",main="P(j'th observation IS IN bootstrap sample)",log="x",ylim=c(0,1))
+   abline(1-1/exp(1),0)
+```
+The probability that the $j^{th}$ observation is in the bootstrap sample decreases as n gets bigger, eventually getting closer to the value of around 0.63.
+
+h.
+```{r}
+store=rep(NA, 10000)
+for(i in 1:10000) {
+  store[i]=sum(sample(1:100, rep=TRUE)==4)>0
+}
+mean(store)
+```
+Strap samples of size 100 were generated 10000 times, and the boolean variable of whether the $4^{th}$ observation is in the bootstrap or not is recorded in the store vector. Around 63% of the time, the $4^{th}$ is in the bootstrap sample.
+
+3. ISLR, chapter 5, problem 3.
+
+a. For the k-fold cross validation, we assume that the data has been provided in the form of a training set and a testing set. We prepare a random partition of the training set into k subsets of approximately equal size. Each subset is called a "fold". For each fold k, we leave out the fold and fit a model to all records not in the fold but in the training set, then calculate the performance of the fit by comparing the prediction of the model to the data in the fold. After that, we combine the resulting k estimates of performance to obtain an overall measure of performance.
+
+b. i. The advantage of k-fold cross validation relative to the validation set approach is that k-fold uses a higher fraction of the data than for validation set. The disadvantage is that k-fold cross validation is more complicated than the validation set method.
+   
+   ii. The advantage of k-fold cross validation relative to LOOCV is that k-fold is less computationally intensive than LOOCV, and its error rate is less variable. The disadvantage is that k-fold error estimation is more biased than LOOCV.
+
+4. ISLR, chapter 5, problem 8. (Do all parts.)
+
+(a)  use the following code to start.
+
+```{r}
+set.seed(1)
+y=rnorm(100)
+x=rnorm(100)
+y=x-2*x^2+rnorm(100)
+x2=x^2
+x3=x^3
+x4=x^4
+data=data.frame(y=y,x=x,x2=x2,x3=x3,x4=x4)
+```
+
+The $p$ that is being asked for is the $p$ for "y=x-2*x^2+rnorm(100)".
+
+In this data set, n = 100 and p = 2.
+
+b.
+```{r}
+plot(x,y)
+```
+The plot of X against Y resembles a quadratic equation.
+
+c.
+```{r}
+library(boot)
+cv.err=rep(0,4)
+for (i in 1:4) {
+  glm.fit=glm(y~poly(x,i),data=data)
+  cv.err[i]=cv.glm(data,glm.fit)$delta[1]
+}
+cv.err
+```
+
+d.
+```{r}
+set.seed(7)
+cv.err=rep(0,4)
+for (i in 1:4) {
+  glm.fit=glm(y~poly(x,i),data=data)
+  cv.err[i]=cv.glm(data,glm.fit)$delta[1]
+}
+cv.err
+```
+There are no difference, because there is no randomness in the training/validation set splits of LOOCV.
+
+e. The quadratic model has the smallest LOOCV error. This is what I expected, because the scatterplot of X against Y showed a shape resembling the parabola.
+
+(f) Asks about the statistical significance of the coefficient estimates
+that result from fitting each of the models in part (c).  This is asking
+about the p-values for the estimated coefficients in the "summary" output.For example, for the simple linear regression in part (c i):
+
+```{r}
+yi=lm(y~x,data=data)
+syi=summary(yi)
+print(syi)
+coefficients(syi)[2,4]
+
+```
+This tells us that when testing $H_0:\beta_1=0$ against $H_A:\beta_1 \ne 0$,
+in the linear regression model, we don't reject $H_0$.
+
+For the quadratic model $=\beta_0 + \beta_1 X + \beta_2 X^2 + \epsilon$,
+
+
+```{r}
+yi=lm(y~x+x2,data=data)
+syi=summary(yi)
+print(syi)
+pvalues=coefficients(syi)[,4]
+
+```
+
+In this case the p-values  associated with "x" and "x2", being less than, say, .05,  mean that we will reject the hypotheses $H_0: \beta_1=0$, 
+and $H_0:\beta_2=0$.
+
+These results do agree with the conclusions drawn based on the cross-validation results, as testing shows that $\beta_1$ for the linear model is not significant, while both $\beta_1$ and $\beta_2$ of the quadratic model are significant.
+
+5. ISLR, chaper 8, problem 5.  
+
+For the majority vote approach, since there are 6 p's larger than 0.5, we conclude that the item is in the class.
+
+For the average probability approach, since the average of the p's is less than 0.5 (0.45), the item is not in the class.
+
+6. ISLR, chapter 8, problem 8. DO ALL PARTS. 
+
+For part (a), use the following split into training and test sets.
+
+```{r}
+set.seed(77191)
+library(ISLR)
+library(randomForest)
+attach(Carseats)
+n=nrow(Carseats)
+indices=sample(1:n,n/2,replace=F)
+cstrain=Carseats[indices,]
+cstest=Carseats[-indices,]
+```
+
+b.
+```{r}
+library(tree)
+cstree=tree(Sales ~ .,data=cstrain)
+plot(cstree)
+text(cstree, pretty = 0)
+title(main="Sales regression tree")
+mypred=predict(cstree,newdata=cstest)
+myMSE=mean((cstest$Sales-mypred)^2)
+myMSE
+```
+This tree is overfitting.
+
+c.
+```{r}
+csCV=cv.tree(cstree, FUN=prune.tree)
+bestsize=csCV$size[csCV$dev==min(csCV$dev)]
+csprune=prune.tree(cstree,best=bestsize)
+plot(csprune)
+text(csprune, pretty=0)
+title(main="Pruned regression tree")
+prunepred=predict(csprune,newdata=cstest)
+prunedMSE=mean((cstest$Sales-prunepred)^2)
+prunedMSE
+```
+The pruned tree doesn't improve the test MSE.
+
+d.
+```{r}
+csbag=randomForest(Sales~.,data=Carseats,subset=indices,mtry=10,importance=T)
+csbag
+importance(csbag)
+varImpPlot(csbag)
+bagpred=predict(csbag,newdata=cstest)
+bagMSE=mean((cstest$Sales-bagpred)^2)
+bagMSE
+```
+
+e.
+```{r}
+csranfor=randomForest(Sales~.,data=Carseats,subset=indices,importance=T)
+csranfor
+importance(csranfor)
+varImpPlot(csranfor)
+rfpred=predict(csranfor,newdata=cstest)
+rfMSE=mean((cstest$Sales-rfpred)^2)
+rfMSE
+```
+The number of variables considered at each split of random forest is smaller than of bagging (3<10), and the error rate of random forest is greater than of bagging.
+
+
